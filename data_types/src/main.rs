@@ -99,9 +99,9 @@ fn invalid_arr_access() {
         .parse()
         .expect("Index entered was not a number.");
 
-    let Element = a[index];
+    let element = a[index];
 
-    println!("The value of the element at index {index} is : {Element}");    
+    println!("The value of the element at index {index} is : {element}");    
 }
 
 // Main Function
