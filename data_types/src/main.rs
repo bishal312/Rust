@@ -33,9 +33,29 @@ fn floating_points() {
     println!("{}", a);
 }
 
-// Main Function
-fn main() {
-    // addition
+// Compound type
+fn compound_type() {
+    //compound Data type
+    // Tuple type
+    let tup: (u32, &str, &str) = (100, "hi", "bsal"); // tuple is fixed and contain multiple type of data
+    let (x, y, z) = tup;
+
+    println!("{}", y);
+    println!("{}", tup.0); //accessing items from tuple
+
+    // Array type
+    let arr = [1, 2, 3, 4, 5];
+    let arr2 = [2; 4];
+
+    println!("{arr2:?}"); // method 1 debug formatting
+    println!("{:?}", arr2); // method 2
+
+    println!("{}", arr2[3]); // access
+}
+
+//Normal operations
+fn simple_operations() {
+     // addition
     let sum = 5 + 10;
 
     // subtraction
@@ -58,17 +78,40 @@ fn main() {
     let c = 'z';
     let z: char = 'ℤ'; // with explicit type annotation
     let heart_eyed_cat = '😻';
+}
 
+use std::io;
 
-    //compound Data type
-    // Tuple type
-    let tup: (u32, &str, &str) = (100, "hi", "bsal"); // tuple is fixed and contain multiple type of data
-    let (x, y, z) = tup;
+// Invalid Array Elements access
+fn invalid_arr_access() {
+    let a = [1, 2, 3, 4, 5];
 
-    println!("{}", y);
-    println!("{}", tup.0); //accessing items from tuple
+    println!("Please Enter an array index?");
+
+    let mut index = String::new();
+
+    io::stdin()
+        .read_line(&mut index)
+        .expect("Failed to read.");
+
+    let index: usize = index
+        .trim()
+        .parse()
+        .expect("Index entered was not a number.");
+
+    let Element = a[index];
+
+    println!("The value of the element at index {index} is : {Element}");    
+}
+
+// Main Function
+fn main() {
+   
 
     //Functions
     integer();
     floating_points();
+    compound_type();
+    simple_operations();
+    invalid_arr_access();
 }
