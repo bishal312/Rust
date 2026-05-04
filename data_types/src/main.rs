@@ -38,13 +38,13 @@ fn compound_type() {
     //compound Data type
     // Tuple type
     let tup: (u32, &str, &str) = (100, "hi", "bsal"); // tuple is fixed and contain multiple type of data
-    let (x, y, z) = tup;
+    let (_x, y, _z) = tup;
 
     println!("{}", y);
     println!("{}", tup.0); //accessing items from tuple
 
     // Array type
-    let arr = [1, 2, 3, 4, 5];
+    let _arr = [1, 2, 3, 4, 5];
     let arr2 = [2; 4];
 
     println!("{arr2:?}"); // method 1 debug formatting
@@ -56,28 +56,28 @@ fn compound_type() {
 //Normal operations
 fn simple_operations() {
      // addition
-    let sum = 5 + 10;
+    let _sum = 5 + 10;
 
     // subtraction
-    let difference = 95.5 - 4.3;
+    let _difference = 95.5 - 4.3;
 
     // multiplication
-    let product = 4 * 30;
+    let _product = 4 * 30;
 
     // division
-    let quotient = 56.7 / 32.2;
-    let truncated = -5 / 3; // Results in -1
+    let _quotient = 56.7 / 32.2;
+    let _truncated = -5 / 3; // Results in -1
 
     // remainder
-    let remainder = 43 % 5;
+    let _remainder = 43 % 5;
 
-    let t = true;
+    let _t = true;
 
-    let f: bool = false; // with explicit type annotation
+    let _f: bool = false; // with explicit type annotation
 
-    let c = 'z';
-    let z: char = 'ℤ'; // with explicit type annotation
-    let heart_eyed_cat = '😻';
+    let _c = 'z';
+    let _z: char = 'ℤ'; // with explicit type annotation
+    let _heart_eyed_cat = '😻';
 }
 
 use std::io;
