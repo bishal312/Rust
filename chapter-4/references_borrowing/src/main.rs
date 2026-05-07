@@ -125,6 +125,17 @@ fn slice() {
 
     // word still has the value 5 here, but s no longer has any content that we
     // could meaningfully use with the value 5, so word is now totally invalid!
+
+    // Compiler Error****
+    // let mut s = String::from("hello world");
+
+    // let word = first_word(&s);
+
+    // s.clear(); // error!
+
+    // println!("the first word is: {word}");
+    // The type of s here is &str: It’s a slice pointing to that specific point of
+    // the binary. This is also why string literals are immutable; &str is an immutable reference.
 }
 
 // fn first_word(s: &String) -> usize {
@@ -152,7 +163,7 @@ fn first_word(s: &String) -> &str {
 // fn second_word (s: &String) -> (usize, usize) {
 //     // String Slices
 //     let s = String::from("nice world");
-    
+
 //     let nice = &s[0..4];
 //     let world = &s[5..10];
 // }
@@ -162,7 +173,7 @@ fn second_word(s: &String) -> &str {
 
     for (i, &item) in bytes.iter().enumerate() {
         if item == b' ' {
-            return &s[i+1..];
+            return &s[i + 1..];
         }
     }
     &s[..]
