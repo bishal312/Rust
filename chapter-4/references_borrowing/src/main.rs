@@ -136,6 +136,16 @@ fn slice() {
     // println!("the first word is: {word}");
     // The type of s here is &str: It’s a slice pointing to that specific point of
     // the binary. This is also why string literals are immutable; &str is an immutable reference.
+
+    // Other Slices
+
+    let a = [1, 2, 3, 4, 5];
+
+    let slice = &a[1..3];
+
+    assert_eq!(slice, &[2, 3]);
+    
+    println!("{:?}", slice);
 }
 
 // fn first_word(s: &String) -> usize {
