@@ -43,4 +43,12 @@ fn main() {
     println!("<- struct function ->");
     _struct();
     tuple_struct();
+    unit_like_Structs();
 }
+
+struct AlwaysEqual;
+
+fn unit_like_Structs() {
+    let subject = AlwaysEqual;
+}
+
