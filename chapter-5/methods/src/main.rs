@@ -17,11 +17,16 @@ impl Rectangle {
     fn width(&self) -> bool {
         self.width > 0
     }
+
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width > other.width && self.height > other.height
+    }
 }
+
+// Each struct is allowed to have multiple impl blocks
 
 // The main reason for using methods instead of functions, in addition to providing method syntax
 // and not having to repeat the type of self in every method’s signature, is for organization.
-
 
 //  -> Operator
 // Rust doesn’t have an equivalent to the -> operator; instead, Rust has a feature called automatic
@@ -47,6 +52,6 @@ fn main() {
         "The area of the rectangle is {} square pixels.",
         rect1.area()
     );
+
+    println!("can react1 hold react2? {}", rect1.can_hold(&rect2));
 }
-
-
