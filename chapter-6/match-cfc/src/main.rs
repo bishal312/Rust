@@ -27,7 +27,33 @@ fn value_in_cent(coin: Coin) -> u8 {
     }
 }
 
+fn add(num: i32, num2: Option<i32>) -> i32 {
+    match num2 {
+        Some(i) => num + i,
+        None => num,
+    }
+}
+
+fn plus_one(num: Option<i32>) -> Option<i32> {
+    match num {
+        Some(i) => Some(i + 1),
+        None => None,
+    }
+}
+
+fn dice_roll() {
+    let dice_roll: i32 = 4;
+    match dice_roll {
+        3 => println!("You got a fancy hat🤠"),
+        6 => println!("You lost a fancy hat😵"),
+        other => println!("Move {} steps", other),
+    }
+}
+
 fn main() {
     println!("Hello, world!");
-    value_in_cent(Coin::Quarter(UsState::Texas));
+    value_in_cent(Coin::Penny);
+    println!("{:?}", add(50, Some(45)));
+    println!("{:?}", plus_one(Some(50)));
+    dice_roll();
 }
