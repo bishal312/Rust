@@ -32,4 +32,29 @@ fn main() {
 
     println!("Fourth number in vector {:?}", fourth);
 
+    // dereference operator *
+    let mut v = vec![55, 66, 100];
+    println!("{:?}", v);
+    for i in &mut v {
+        //& reference operator
+        *i *= 2; // * deference operator
+    }
+    println!("{:?}", v);
+
+    mixtype();
+}
+#[derive(Debug)]
+enum Login {
+    username(String),
+    password(String),
+    email(String),
+}
+fn mixtype() {
+    let user1: Vec<Login> = vec![
+        Login::username(String::from("Bishal")),
+        Login::password(String::from("bking1212")),
+        Login::email(String::from("bishal12@gmail.com")),
+    ];
+
+    println!("{:?}", user1);
 }
