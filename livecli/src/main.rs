@@ -18,7 +18,7 @@ fn main() {
     }
 
     // Store the string in a variable
-    let mut input: String = args[1].clone();
+    let input: String = args[1].clone();
 
     // reverse the string
     let reversed = input.chars().rev().collect::<String>();
