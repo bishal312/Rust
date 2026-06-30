@@ -4,5 +4,4 @@
 *.pdb
 *.d
 */target/
-*.lock
-*.toml
+
