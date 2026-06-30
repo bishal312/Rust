@@ -6,9 +6,22 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         fs::read_to_string(config.file_path).expect("Something wend wrong while reading file");
 
     // println!("CONTENT:- {}", contents);
-    for line in search(&config.query, &contents) {
-        println!("{}", line);
+    // for line in search(&config.query, &contents) {
+    //     if line.len() > 0 {
+    //         println!("{}", line);
+    //     }
+    // }
+    // Ok(())
+    let results = search(&config.query, &contents);
+
+    if results.is_empty() {
+        println!("Query not found!");
+    } else {
+        for line in results {
+            println!("{}", line);
+        }
     }
+
     Ok(())
 }
 
