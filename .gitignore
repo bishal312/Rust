@@ -3,5 +3,5 @@
 *.exe
 *.pdb
 *.d
-*/target/
+**/target/
 **.env
