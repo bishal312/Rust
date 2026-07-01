@@ -6,8 +6,8 @@ Closures are blcok of code that can be :
 - Passed as arguments to functions
 - returned from functions
 
-They are similar to functions but with one main difference:
 They can capture variables from theri surrounding scope.
+They are similar to functions but with one main difference:
 
 Key features:
 - **Anonymous Functions**:
