@@ -4,4 +4,4 @@
 *.pdb
 *.d
 */target/
-
+**.env
