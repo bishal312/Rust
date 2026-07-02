@@ -4,3 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+
+[profile.dev]
+opt-level = opt
+debug = true #This line is added to enable debugging
+
+[profile.release]
+opt-level = 3
+debug = false #This line is added to disable debugging
+lto = true # THis line is added to enable link-time optimization
