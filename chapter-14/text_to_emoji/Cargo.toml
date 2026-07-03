@@ -12,4 +12,3 @@ readme = "README.md"
 keywords = ["emoji", "text", "convert", "rust"]
 categories = [""]
 
-[dependencies]
