@@ -1,0 +1,7 @@
+[package]
+name = "emoji_test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+text_to_emoji = "0.1.0"
