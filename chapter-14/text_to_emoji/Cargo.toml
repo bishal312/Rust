@@ -9,5 +9,5 @@ repository = "https://github.com/bishal312/Rust.git"
 homepage = "https://github.com/bishal312/Rust.git"
 readme = "README.md"
 keywords = ["emoji", "text", "convert", "rust"]
-categories = [""]
+categories = ["text-processing"]
 
