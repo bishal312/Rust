@@ -46,4 +46,41 @@ fn main() {
     for received2 in r1{
         println!("{}", received2);
     }
+
+    multiple_provider();
+}
+
+
+fn multiple_provider() {
+    let (tx, rx) = mpsc::channel();
+
+    let tx1 = tx.clone();
+    thread::spawn(move || {
+        let vals = vec![
+            String::from("Hello"),
+            String::from("Everybody"),
+            String::from("I am Bishal"),
+        ];
+        for val in vals {
+            tx1.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    thread:: spawn(move || {
+        let vals = vec![
+            String::from("Hi"),
+            String::from("guys!"),
+            String::from("I am Mitra"),
+        ];
+
+        for val in vals {
+            tx.send(val).unwrap();
+            thread::sleep(Duration::from_secs(1));
+        }
+    });
+
+    for received in rx {
+        println!("Message: {received}");
+    }
 }
