@@ -1,7 +1,7 @@
 use trpl::{Either, Html};
 
 fn main() {
-    let args = std::env::args().collect();
+    let args: Vec<String> = std::env::args().collect();
 
     trpl::block_on(async {
         let title_fut_1 = page_title(&args[1]);
@@ -28,3 +28,10 @@ async fn page_title(url: &str) -> (&str, Option<String>) {
         .map(|title| title.inner_html());
     (url, title)
 }
+
+// output
+// cargo run -- https://youtube.com https://facebook.com               
+//     Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+//      Running `target\debug\racing-two-urls.exe https://youtube.com https://facebook.com`
+// https://youtube.com returned first
+// It's page title was: 'YouTube'
