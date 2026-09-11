@@ -1,0 +1,70 @@
+In Rust, **`impl Trait`** and **`dyn Trait`** represent two distinct mechanisms for working with trait bounds: **Static Dispatch** versus **Dynamic Dispatch**.
+
+---
+
+| Feature | `&impl Trait` (Static) | `&dyn Trait` (Dynamic) |
+| --- | --- | --- |
+| **Mechanism** | Monomorphization (compile-time) | Vtable lookup (runtime) |
+| **Performance** | Zero cost; enables inlining | Small runtime overhead (indirect call) |
+| **Heterogeneous Types** | ❌ Accepts only one type per call site | ✅ Accepts multiple types in a single place |
+| **Binary Size** | Can lead to code bloat | Keeps binary size smaller |
+| **Trait Requirements** | Works with any trait | Trait must be **dyn-compatible** (object-safe) |
+
+---
+
+### **When to Use `&impl Trait**`
+
+Use `&impl Trait` when you know the concrete type at compile time and want maximum performance. It acts as a concise shorthand for generics (`fn foo<T: Trait>(arg: &T)`).
+
+* **Performance-critical paths:** The compiler generates specialized code for every distinct type passed in, allowing functions to be fully inlined.
+* **Single input type per call:** Every time you call the function, the compiler resolves `impl Trait` to a single specific type.
+* **Iterators & Closures:** Hiding complex, unnameable concrete types without sacrificing speed or requiring heap allocations.
+
+```rust
+// The compiler generates two separate functions behind the scenes:
+// one for &str, one for String.
+fn print_message(msg: &impl std::fmt::Display) {
+    println!("{msg}");
+}
+
+print_message(&"Hello"); 
+print_message(&String::from("World"));
+
+```
+
+---
+
+### **When to Use `&dyn Trait**`
+
+Use `&dyn Trait` when you need **heterogeneous collections** or runtime flexibility—specifically when different types must exist behind the same reference or variable.
+
+* **Collections of mixed types:** When storing different types implementing the same trait inside a single `Vec` or array (e.g., `Vec<&dyn Draw>`).
+* **Conditional returns / runtime branching:** Returning different concrete types based on runtime conditions (usually wrapped as `Box<dyn Trait>` or `&dyn Trait`).
+* **Reducing binary bloat:** Avoiding multiple monomorphized duplicates of a large function for dozens of different concrete implementations.
+
+```rust
+trait Render {
+    fn render(&self);
+}
+
+struct Button;
+struct Image;
+
+impl Render for Button { fn render(&self) { println!("Button"); } }
+impl Render for Image  { fn render(&self) { println!("Image"); } }
+
+// Different concrete types in the same slice using dynamic dispatch
+fn render_all(items: &[&dyn Render]) {
+    for item in items {
+        item.render(); // Calls method via runtime vtable lookup
+    }
+}
+
+```
+
+---
+
+### **Rule of Thumb**
+
+1. **Default to `impl Trait**` (or standard generics) for speed, safety, and zero overhead.
+2. **Switch to `dyn Trait**` when you need to store or pass multiple different concrete types through the same signature.
