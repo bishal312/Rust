@@ -79,6 +79,23 @@ fn main() {
     // function parameters
     // let statements
     // for loops
+
+    // using @binding
+    enum Message {
+        Hello {id: i32},
+    }
+
+    let msg = Message::Hello {id: 14};
+
+    match msg {
+        Message::Hello {id: id @ 3..7} => {
+            println!("Found an id in range: {id}")
+        }
+        Message::Hello {id: id @ 10..17} => {
+            println!("Found an id in another range: {id}")
+        }
+        Message::Hello {id} => println!("Found some ohther id: {id}"),
+    }
 }
 
 fn print_coordinates(&(x, y): &(i32, i32)) {
