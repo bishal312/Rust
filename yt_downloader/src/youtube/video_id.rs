@@ -1,5 +1,4 @@
 use thiserror::Error;
-use tokio::sync::broadcast::error;
 use url::Url;
 
 // Validated 11-character YouTube video ID.
@@ -18,7 +17,7 @@ impl VideoId {
         let valid = candiate.len() == 11
             && candiate
                 .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == "-" || c == "_");
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
 
         if valid {
             Ok(VideoId(candiate.to_string()))
@@ -58,6 +57,12 @@ pub fn parse_video_id(input: &str) -> Result<VideoId, ParseError> {
     let host = url.host_str().ok_or(ParseError::NotYoutube)?;
     let host = host.strip_prefix("www.").unwrap_or(host);
 
+    const YOUTUBE_HOSTS: &[&str] = &[
+        "youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+        "youtube-nocookie.com",
+    ];
     let candidate: Option<String> = match host {
         // https://Youtu.be/<id>
         "youtu.be" => url
@@ -65,7 +70,7 @@ pub fn parse_video_id(input: &str) -> Result<VideoId, ParseError> {
             .and_then(|mut segments| segments.next())
             .map(str::to_owned),
 
-        "youtube.com" | "m.youtube.com" | "music.youtube.com" => {
+        h if YOUTUBE_HOSTS.contains(&h) => {
             let mut segments = url.path_segments().into_iter().flatten();
             match segments.next() {
                 // https://www.youtube.com/watch?v=<id>
@@ -75,7 +80,7 @@ pub fn parse_video_id(input: &str) -> Result<VideoId, ParseError> {
                     .map(|(_, value)| value.into_owned()),
 
                 // /shorts/<id>, /embed/<id>, /live//<id>
-                Some("shorts") | Some("embed") | Some("live") => segments.next().map(str::to_owned),
+                Some("shorts" | "embed" | "live" | "v") => segments.next().map(str::to_owned),
 
                 _ => None,
             }
@@ -130,6 +135,14 @@ mod tests {
         assert_parses("abc123XYZ_-");
         assert_parses("  abc123XYZ_-  ");
         assert_parses("youtube.com/watch?v=abc123XYZ_-");
+    }
+
+    #[test] // nocookie_and_old_v_paths test
+    fn nocookie_and_old_v_paths() {
+        assert_parses("https://www.youtube-nocookie.com/embed/abc123XYZ_-");
+        assert_parses("https://youtube-nocookie.com/embed/abc123XYZ_-");
+        assert_parses("https://youtube.com/v/abc123XYZ_-");
+        assert_parses("https://youtube.com/v/abc123XYZ_-?version=3");
     }
 
     #[test] // error test
