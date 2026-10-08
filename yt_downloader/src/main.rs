@@ -1,9 +1,10 @@
 mod youtube;
+mod routes;
 use axum::{Json, Router, extract::Query, http::StatusCode, routing::get};
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 use youtube::{
-    client::ClientProfile, innertube::fetch_player_raw, models::PlayerResponse,
+    client::ClientProfile, innertube::fetch_player_with_fallback, models::PlayerResponse,
     video_id::parse_video_id,
 };
 
@@ -14,26 +15,18 @@ struct PlayerQuery {
 
 async fn debug_player(
     Query(q): Query<PlayerQuery>,
-) -> Result<Json<serde_json::Value>, (StatusCode, String)> {
+) -> Result<Json<PlayerResponse>, (StatusCode, String)> {
     let id = parse_video_id(&q.url).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     // A new client per request is wasteful;
     let http = reqwest::Client::new();
 
-    let client = ClientProfile::android_vr();
-
-    let raw = fetch_player_raw(&http, &id, &client)
+    let profiles = [ClientProfile::android_vr(), ClientProfile::ios()];
+    let (player, used) = fetch_player_with_fallback(&http, &id, &profiles)
         .await
         .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{e:#}")))?;
 
-    let player: PlayerResponse = serde_json::from_value(raw.clone())
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-
-    println!(
-        "playability: {} ({:?})",
-        player.playability_status.status, player.playability_status.reason
-    );
-
+    println!("Client that worked: {}", used.name);
     if let Some(sd) = &player.streaming_data {
         for f in sd.formats.iter().chain(sd.adaptive_formats.iter()) {
             println!(
@@ -45,7 +38,7 @@ async fn debug_player(
             );
         }
     }
-    Ok(Json(raw))
+    Ok(Json(player))
 }
 
 #[tokio::main]

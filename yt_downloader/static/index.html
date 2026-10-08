@@ -11,6 +11,35 @@
     <input id="url" placeholder="Paste a video URL" size="50">
     <button id="go">Get info</button>
     <pre id="out"></pre>
+    <script>
+        const urlInput = document.getElementById("url");
+        const button = document.getElementById("go");
+        const output = document.getElementById("out");
+
+        button.addEventListener("click", async () => {
+            const url = urlInput.value.trim();
+            if (!url) {
+                output.textContent = "Paste a video URL first.";
+                return;
+            }
+
+            button.disabled = true;
+            output.textContent = "Loading...";
+            try {
+                const query = new URLSearchParams({ url });
+                const response = await fetch(`/api/debug/player?${query}`);
+                const body = await response.text();
+                if (!response.ok) {
+                    throw new Error(body || `Request failed (${response.status})`);
+                }
+                output.textContent = JSON.stringify(JSON.parse(body), null, 2);
+            } catch (error) {
+                output.textContent = `Could not get video info: ${error.message}`;
+            } finally {
+                button.disabled = false;
+            }
+        });
+    </script>
 </body>
 
 </html>
