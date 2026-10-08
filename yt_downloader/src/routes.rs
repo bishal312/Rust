@@ -6,12 +6,11 @@ use axum::{
 };
 
 use serde::Deserialize;
-use tokio::net::windows::named_pipe::PipeEnd::Client;
 use tower_http::services::ServeDir;
 
+use crate::youtube::info::InfoResponse;
 use crate::youtube::{
-    client::ClientProfile, info::InfoResponse, innertube::fetch_player_with_fallback,
-    video_id::parse_video_id,
+    client::ClientProfile, innertube::fetch_player_with_fallback, video_id::parse_video_id,
 };
 
 type ApiError = (StatusCode, String);
@@ -38,7 +37,7 @@ async fn info(
     State(state): State<AppState>,
     Json(req): Json<InfoRequest>,
 ) -> Result<Json<InfoResponse>, ApiError> {
-    let id = parse_video_id(&req.url).map_err(|e| (StatusCode::BAD_REQUEST))?;
+    let id = parse_video_id(&req.url).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
     let profiles = [ClientProfile::android_vr(), ClientProfile::ios()];
     let (player, used) = fetch_player_with_fallback(&state.http, &id, &profiles)
         .await

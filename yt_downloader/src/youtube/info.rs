@@ -1,11 +1,11 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
 
 use super::models::{Format, PlayerResponse};
 
 #[derive(Debug, Serialize)]
 pub struct InfoResponse {
-    pub Video_id: String,
+    pub video_id: String,
     pub title: String,
     pub author: String,
     pub duration_seconds: u64,
@@ -87,7 +87,7 @@ impl InfoResponse {
         });
 
         Some(InfoResponse {
-            Video_id: details.video_id.clone(),
+            video_id: details.video_id.clone(),
             title: details.title.clone(),
             author: details.author.clone(),
             duration_seconds: details.length_seconds.parse().unwrap_or(0),

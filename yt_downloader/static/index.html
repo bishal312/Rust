@@ -12,31 +12,42 @@
     <button id="go">Get info</button>
     <pre id="out"></pre>
     <script>
-        const urlInput = document.getElementById("url");
-        const button = document.getElementById("go");
-        const output = document.getElementById("out");
+        const out = document.getElementById("out");
 
-        button.addEventListener("click", async () => {
-            const url = urlInput.value.trim();
-            if (!url) {
-                output.textContent = "Paste a video URL first.";
-                return;
-            }
-
-            button.disabled = true;
-            output.textContent = "Loading...";
+        document.getElementById("go").addEventListener("click", async () => {
+            out.textContent = "Loading...";
             try {
-                const query = new URLSearchParams({ url });
-                const response = await fetch(`/api/debug/player?${query}`);
-                const body = await response.text();
-                if (!response.ok) {
-                    throw new Error(body || `Request failed (${response.status})`);
+                const res = await fetch("/api/info", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ url: document.getElementById("url").value }),
+                });
+                if (!res.ok) {
+                    out.textContent = await res.text();
+                    return;
                 }
-                output.textContent = JSON.stringify(JSON.parse(body), null, 2);
-            } catch (error) {
-                output.textContent = `Could not get video info: ${error.message}`;
-            } finally {
-                button.disabled = false;
+                const info = await res.json();
+                const mins = Math.floor(info.duration_seconds / 60);
+                const secs = String(info.duration_seconds % 60).padStart(2, "0");
+
+                out.textContent = [
+                    `${info.title} - ${info.author}`,
+                    `${mins}:${secs}  (client: ${info.client})`,
+                    "",
+                    ...info.formats.map((f) =>
+                        [
+                            String(f.itag).padStart(3),
+                            f.kind.padEnd(5),
+                            f.container.padEnd(4),
+                            (f.quality ?? "-").padEnd(6),
+                            f.codec.padEnd(16),
+                            `${f.size_mb ?? "-"} MB`.padStart(10),
+                            f.mp4_muxable ? "  mp4-muxable" : "",
+                        ].join("  ")
+                    ),
+                ].join("\n");
+            } catch (e) {
+                out.textContent = "Request failed: " + e;
             }
         });
     </script>
