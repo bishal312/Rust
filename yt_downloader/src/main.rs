@@ -1,5 +1,6 @@
 mod routes;
 mod youtube;
+mod download;
 
 #[tokio::main]
 async fn main() {
