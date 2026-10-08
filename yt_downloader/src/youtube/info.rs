@@ -45,8 +45,7 @@ impl FormatSummary {
 
         let container = f.container().to_string();
         let codec = f.codecs().to_string();
-        let mp4_muxable =
-            container == "mp4" && (codec.starts_with("avc1") || codec.starts_with("mp4a"));
+        let mp4_muxable = f.is_aac_mp4() || f.is_h264_mp4();
 
         Some(FormatSummary {
             itag: f.itag,

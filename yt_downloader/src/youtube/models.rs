@@ -90,6 +90,14 @@ impl Format {
             .and_then(|rest| rest.split('"').next())
             .unwrap_or("")
     }
+
+    pub fn is_h264_mp4(&self) -> bool {
+        self.is_video() && self.container() == "mp4" && self.codecs().starts_with("avc1")
+    }
+
+    pub fn is_aac_mp4(&self) -> bool {
+        self.is_audio() && self.container() == "mp4" && self.codecs().starts_with("mp4a")
+    }
 }
 
 #[cfg(test)]
