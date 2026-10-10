@@ -3,13 +3,19 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
-use anyhow::{Context, Result, ensure};
+use anyhow::{Context, Result, bail, ensure};
 use axum::http;
 use reqwest::StatusCode;
 use reqwest::header::{RANGE, USER_AGENT};
 use tokio::io::AsyncWriteExt;
 
-use crate::youtube::models::Format;
+use crate::youtube::{
+    client::ClientProfile,
+    innertube::fetch_player_with_fallback,
+    models::{Format, PlayerResponse},
+    select::pick_formats,
+    video_id::VideoId,
+};
 
 const CHUNK_SIZE: u64 = 4 * 1024 * 1024; // 4 MiB per request
 const MAX_ATTEMPTS: u32 = 3;
@@ -133,4 +139,87 @@ async fn fetch_chunk(
     );
 
     Ok(buf)
+}
+
+// asking for the last 1 KiB of a stream. If the server only serves the first
+// part of a file to this client, this fails now instead of mid-download.
+
+pub async fn probe_tail(http: &reqwest::Client, format: &Format, user_agent: &str) -> Result<()> {
+    let url = format.url.as_deref().context("format has no direct url")?;
+    let total = format
+        .content_length()
+        .context("format has no contentLength")?;
+    ensure!(total > 0, "empty stream");
+
+    let start = total.saturating_sub(1024);
+    let end = total - 1;
+
+    let resp = http
+        .get(url)
+        .header(USER_AGENT, user_agent)
+        .header(RANGE, format!("bytes={start}-{end}"))
+        .send()
+        .await
+        .context("probe request failed")?;
+
+    ensure!(
+        resp.status() == StatusCode::PARTIAL_CONTENT,
+        "probe of bytes {start}-{end}: expected 206, got {}",
+        resp.status()
+    );
+
+    Ok(())
+}
+
+// tries each client in order and returns the first one whose streams
+// actually deliver the end of the file, not just the beginning.
+pub async fn find_working_client<'a>(
+    http: &reqwest::Client,
+    id: &VideoId,
+    profiles: &'a [ClientProfile],
+    max_height: u32,
+) -> Result<(PlayerResponse, &'a ClientProfile)> {
+    let mut failures = Vec::new();
+
+    for profile in profiles {
+        match try_for_download(http, id, profile, max_height).await {
+            Ok(player) => return Ok((player, profile)),
+            Err(e) => {
+                eprintln!("client {} rejected: {e:#}", profile.name);
+                failures.push(format!("{}: {e:#}", profile.name));
+            }
+        }
+    }
+    bail!(
+        "no client cloud deliver this video:\n {}",
+        failures.join("\n  ")
+    )
+}
+
+async fn try_for_download(
+    http: &reqwest::Client,
+    id: &VideoId,
+    profile: &ClientProfile,
+    max_height: u32,
+) -> Result<PlayerResponse> {
+    // reuse the single-profile logic by passing a one-element slice.
+    let (player, _) = fetch_player_with_fallback(http, id, std::slice::from_ref(profile)).await?;
+
+    {
+        let streaming = player
+            .streaming_data
+            .as_ref()
+            .context("no streaming data")?;
+        let (video, audio) = pick_formats(&streaming.adaptive_formats, max_height)
+            .context("no H.264 + AAC MP4 pair available")?;
+
+        probe_tail(http, video, profile.user_agent)
+            .await
+            .context("video stream")?;
+        probe_tail(http, audio, profile.user_agent)
+            .await
+            .context("audio stream")?;
+    } // `streaming`, `video`, `audio`, stop borrowing `player` here
+
+    Ok(player)
 }

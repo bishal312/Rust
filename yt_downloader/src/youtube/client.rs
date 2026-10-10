@@ -54,4 +54,25 @@ impl ClientProfile {
             }),
         }
     }
+
+    pub fn visionos() -> Self {
+        ClientProfile {
+            name: "visionos",
+            client_id: 101,
+            client_version: "1.02",
+            user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_3) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
+            context: json!({
+                    "client": {
+                        "clientName": "VISIONOS",
+                        "clientVersion": "1.02",
+                        "deviceMake": "Apple",
+                        "deviceModel": "RealityDevice17,1",
+                        "osName": "visionOS",
+                        "osVersion": "26.5.230471",
+                        "hl": "en",
+                        "gl": "US",
+                    }
+            }),
+        }
+    }
 }
