@@ -1,0 +1,5 @@
+$secureCookie = Read-Host "YouTube Cookie header" -AsSecureString
+$env:YOUTUBE_COOKIE = [System.Net.NetworkCredential]::new("", $secureCookie).Password
+cargo run
+
+Remove-Item Env:YOUTUBE_COOKIE

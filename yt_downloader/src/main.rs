@@ -1,18 +1,34 @@
+mod download;
 mod routes;
 mod youtube;
-mod download;
+
+use anyhow::Context;
+use reqwest::header::HeaderValue;
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
+    let youtube_cookie = match std::env::var("YOUTUBE_COOKIE") {
+        Ok(cookie) if cookie.trim().is_empty() => None,
+        Ok(cookie) => Some(
+            HeaderValue::from_str(cookie.trim())
+                .context("YOUTUBE_COOKIE is not a valid HTTP header value")?,
+        ),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(error) => return Err(error.into()),
+    };
+
+    let web_profile = youtube::client::ClientProfile::web();
     let state = routes::AppState {
-        http: reqwest::Client::new(),
+        http: reqwest::Client::builder()
+            .user_agent(web_profile.user_agent)
+            .build()?,
+        youtube_cookie,
     };
     let app = routes::router(state);
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
-        .await
-        .unwrap();
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     println!("listening on http://127.0.0.1:3000");
-    axum::serve(listener, app).await.unwrap()
+    axum::serve(listener, app).await?;
+    Ok(())
 }
 
 // mod youtube;

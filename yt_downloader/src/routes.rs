@@ -17,17 +17,18 @@ use serde::Deserialize;
 use serde_json::json;
 use tower_http::services::ServeDir;
 
-use crate::youtube::info::InfoResponse;
 use crate::youtube::{
     client::ClientProfile, innertube::fetch_player_with_fallback, video_id::parse_video_id,
 };
 use crate::{download::download_pair, youtube::select::pick_formats};
+use crate::{download::find_working_client, youtube::info::InfoResponse};
 
 type ApiError = (StatusCode, String);
 
 #[derive(Clone)]
 pub struct AppState {
     pub http: reqwest::Client,
+    pub youtube_cookie: Option<reqwest::header::HeaderValue>,
 }
 
 pub fn router(state: AppState) -> Router {
@@ -49,10 +50,16 @@ async fn info(
     Json(req): Json<InfoRequest>,
 ) -> Result<Json<InfoResponse>, ApiError> {
     let id = parse_video_id(&req.url).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-    let profiles = [ClientProfile::android_vr(), ClientProfile::ios()];
-    let (player, used) = fetch_player_with_fallback(&state.http, &id, &profiles)
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{e:#}")))?;
+    let profiles = [
+        ClientProfile::web(),
+        ClientProfile::android_vr(),
+        ClientProfile::ios(),
+        ClientProfile::visionos(),
+    ];
+    let (player, used) =
+        fetch_player_with_fallback(&state.http, &id, &profiles, state.youtube_cookie.as_ref())
+            .await
+            .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{e:#}")))?;
 
     let info = InfoResponse::from_player(&player, used.name).ok_or((
         StatusCode::BAD_GATEWAY,
@@ -78,10 +85,22 @@ async fn debug_download(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id = parse_video_id(&req.url).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
-    let profiles = [ClientProfile::android_vr(), ClientProfile::ios()];
-    let (player, used) = fetch_player_with_fallback(&state.http, &id, &profiles)
-        .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{e:#}")))?;
+    let profiles = [
+        ClientProfile::web(),
+        ClientProfile::android_vr(),
+        ClientProfile::ios(),
+        ClientProfile::visionos(),
+    ];
+    let (player, used) = find_working_client(
+        &state.http,
+        &id,
+        &profiles,
+        req.max_height,
+        state.youtube_cookie.as_ref(),
+    )
+    .await
+    .map_err(|e| (StatusCode::BAD_GATEWAY, format!("{e:#}")))?;
+    println!("using client {}", used.name);
 
     let streaming = player
         .streaming_data
@@ -113,7 +132,16 @@ async fn debug_download(
     };
 
     let dir = PathBuf::from("downloads").join(id.as_str());
-    let result = download_pair(&state.http, video, audio, used.user_agent, &dir, progress).await;
+    let result = download_pair(
+        &state.http,
+        video,
+        audio,
+        used.user_agent,
+        &dir,
+        progress,
+        state.youtube_cookie.as_ref(),
+    )
+    .await;
     ticker.abort();
 
     let (video_path, audio_path) =

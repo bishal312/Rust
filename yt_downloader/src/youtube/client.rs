@@ -10,6 +10,28 @@ pub struct ClientProfile {
 }
 
 impl ClientProfile {
+    pub fn web() -> Self {
+        ClientProfile {
+            name: "web",
+            client_id: 1,
+            client_version: "2.20261001.00.00",
+            user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            context: json!({
+                "client": {
+                    "clientName": "WEB",
+                    "clientVersion": "2.20261001.00.00",
+                    "platform": "DESKTOP",
+                    "hl": "en",
+                    "gl": "US",
+                    "browserName": "Chrome",
+                    "browserVersion": "131.0.0.0",
+                    "osName": "Windows",
+                    "osVersion": "10.0",
+                }
+            }),
+        }
+    }
+
     // Values mirrored from yt-dlp's INNERTUBE_CLIENTS. They go stale:
     // When requests start failing, this is the first place to look.
     pub fn android_vr() -> Self {
@@ -74,5 +96,21 @@ impl ClientProfile {
                     }
             }),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ClientProfile;
+
+    #[test]
+    fn web_profile_uses_desktop_web_identity() {
+        let profile = ClientProfile::web();
+        assert_eq!(profile.client_id, 1);
+        assert_eq!(profile.client_version, "2.20261001.00.00");
+        assert_eq!(profile.context["client"]["clientName"], "WEB");
+        assert_eq!(profile.context["client"]["platform"], "DESKTOP");
+        assert!(profile.user_agent.contains("Windows NT 10.0"));
+        assert!(profile.user_agent.contains("Chrome/131.0.0.0"));
     }
 }

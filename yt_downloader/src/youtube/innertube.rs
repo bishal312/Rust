@@ -1,4 +1,5 @@
 use anyhow::{Context, Result, bail};
+use reqwest::header::{COOKIE, HeaderValue};
 use serde_json::{Value, json};
 
 use super::{client::ClientProfile, models::PlayerResponse, video_id::VideoId};
@@ -12,6 +13,7 @@ pub async fn fetch_player_raw(
     http: &reqwest::Client,
     video_id: &VideoId,
     client: &ClientProfile,
+    cookie: Option<&HeaderValue>,
 ) -> Result<Value> {
     let body = json!({
         "context": client.context,
@@ -20,11 +22,17 @@ pub async fn fetch_player_raw(
         "racyCheckOk": true,
     });
 
-    http.post(PLAYER_URL)
+    let mut request = http
+        .post(PLAYER_URL)
         .header("User-Agent", client.user_agent)
         .header("X-Youtube-Client-Name", client.client_id.to_string())
         .header("X-YouTube-Client-Version", client.client_version)
-        .json(&body)
+        .json(&body);
+    if let Some(cookie) = cookie {
+        request = request.header(COOKIE, cookie.clone());
+    }
+
+    request
         .send()
         .await
         .context("request to /player failed")?
@@ -39,11 +47,12 @@ pub async fn fetch_player_with_fallback<'a>(
     http: &reqwest::Client,
     video_id: &VideoId,
     profiles: &'a [ClientProfile],
+    cookie: Option<&HeaderValue>,
 ) -> Result<(PlayerResponse, &'a ClientProfile)> {
     let mut failures: Vec<String> = Vec::new();
 
     for profile in profiles {
-        match try_profile(http, video_id, profile).await {
+        match try_profile(http, video_id, profile, cookie).await {
             Ok(player) => return Ok((player, profile)),
             Err(e) => failures.push(format!("{}: {e:#}", profile.name)),
         }
@@ -55,15 +64,21 @@ async fn try_profile(
     http: &reqwest::Client,
     video_id: &VideoId,
     profile: &ClientProfile,
+    cookie: Option<&HeaderValue>,
 ) -> Result<PlayerResponse> {
-    let raw = fetch_player_raw(http, video_id, profile).await?;
-    let player: PlayerResponse = serde_json::from_value(raw).context("unexpected response shape")?;
+    let raw = fetch_player_raw(http, video_id, profile, cookie).await?;
+    let player: PlayerResponse =
+        serde_json::from_value(raw).context("unexpected response shape")?;
 
     if player.playability_status.status != "OK" {
         bail!(
             "{} ({})",
             player.playability_status.status,
-            player.playability_status.reason.as_deref().unwrap_or("no reason given")
+            player
+                .playability_status
+                .reason
+                .as_deref()
+                .unwrap_or("no reason given")
         );
     }
 
