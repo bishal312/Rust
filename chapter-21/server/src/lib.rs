@@ -4,8 +4,14 @@ use std::{sync::{mpsc, Arc, Mutex}, thread};
 pub struct ThreadPool {
     workers: Vec<Worker>,
     // The transmitting half of the channel used to send jobs to worker threads.
-    sender: mpsc::Sender<Job>,
+    sender: mpsc::Sender<Message>,
 }
+
+enum Message {
+    NewJob(Job),
+    Terminate,
+}
+
 
 // A type alias for a closure that can be sent across threads, 
 // takes no arguments, and has a 'static lifetime.
@@ -45,34 +51,58 @@ impl ThreadPool {
         F: FnOnce() + Send + 'static,
     {
         let job = Box::new(f);
-        self.sender.send(job).unwrap();
+        self.sender.send(Message::NewJob(job)).unwrap();
     }
 }
+
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        println!("Sending terminate message to all workers.");
+
+        for _ in &self.workers {
+            self.sender.send(Message::Terminate).unwrap();
+        }
+        for worker in &mut self.workers {
+            println!("Shutting down worker {}", worker.id);
+
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap();
+            }
+        }
+    }
+}
+
 
 /// Represents an individual worker thread in the pool.
 struct Worker {
     id: usize,
-    thread: thread::JoinHandle<()>,
+    thread: Option<thread::JoinHandle<()>>,
 }
 
 impl Worker {
     /// Spawns a new worker thread that continuously listens for incoming jobs.
-    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Job>>>) -> Worker {
+    fn new(id: usize, receiver: Arc<Mutex<mpsc::Receiver<Message>>>) -> Worker {
         let thread = thread::spawn(move || loop {
             // Lock the mutex to safely acquire exclusive access to the receiver, 
             // then block until the next job is received from the channel.
-            let job = receiver
+            let message = receiver
                 .lock()
                 .unwrap()
                 .recv()
                 .unwrap();
 
-            println!("Worker {} got a job; executing.", id);
-            
-            // Execute the closure.
-            job();
+            match message {
+                Message::NewJob(job) => {
+                    println!("Worker {} got a job; executing.", id);
+                    job();
+                }
+                Message::Terminate => {
+                    println!("Worker {} was told to terminate.", id);
+                    break;
+                }
+            }
         });
 
-        Worker { id, thread }
+        Worker { id, thread: Some(thread) }
     }
 }
